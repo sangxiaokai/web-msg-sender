@@ -79,7 +79,7 @@ $sender_io->on('workerStart', function(){
                 if($to && !isset($uidConnectionMap[$to])){
                     return $http_connection->send('offline');
                 }else{
-                    return $http_connection->send('ok');
+                    return $http_connection->send('<b>ok!</b>');
                 }
         }
         return $http_connection->send('fail');
@@ -99,6 +99,27 @@ $sender_io->on('workerStart', function(){
             $last_online_count = $online_count_now;
             $last_online_page_count = $online_page_count_now;
         }
+
+    });
+    Timer::add(2, function(){
+        global $sender_io;
+        // 只有在客户端在线数变化了才广播，减少不必要的客户端通讯
+        // $data=json_encode(['name'=>'hello A','content'=>'it is me!']);
+        $data = @file_get_contents('README.md');
+
+        $push_api_url = "http://localhost/test/php/json.php";
+        
+        $ch = curl_init ();
+        curl_setopt ( $ch, CURLOPT_URL, $push_api_url );
+        curl_setopt ( $ch, CURLOPT_POST, 1 );
+        curl_setopt ( $ch, CURLOPT_HEADER, 0 );
+        curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, 1 );
+        // curl_setopt ( $ch, CURLOPT_POSTFIELDS, $post_data );
+        $data = curl_exec ( $ch );
+        curl_close ( $ch );
+        
+        $sender_io->emit('new_msg', $data);
+
     });
 });
 
